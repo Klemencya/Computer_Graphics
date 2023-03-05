@@ -5,6 +5,7 @@
 #include "utils/error_handler.h"
 
 #include <linalg.h>
+#include <iostream>
 
 
 using namespace linalg::aliases;
@@ -39,6 +40,7 @@ void cg::world::model::load_obj(const std::filesystem::path& model_path)
 
 void model::allocate_buffers(const std::vector<tinyobj::shape_t>& shapes)
 {
+    size_t unindexed_vertex_num = 0;
 	for (const auto& shape : shapes)
     {
 	    size_t index_offset = 0;
@@ -63,6 +65,7 @@ void model::allocate_buffers(const std::vector<tinyobj::shape_t>& shapes)
                     vertex_buffer_size++;
                 }
                 index_buffer_size++;
+                unindexed_vertex_num++;
             }
             index_offset += fv;
         }
@@ -74,6 +77,29 @@ void model::allocate_buffers(const std::vector<tinyobj::shape_t>& shapes)
                         index_buffer_size));
     }
 	textures.resize(shapes.size());
+
+
+	size_t vertex_num = 0;
+	size_t vertex_size = 0;
+	for (const auto& vb : vertex_buffers)
+    {
+	    vertex_num += vb->get_number_of_elements();
+	    vertex_size += vb->get_size_in_bytes();
+    }
+
+    size_t index_num = 0;
+	size_t index_size = 0;
+    for (const auto& ib : index_buffers)
+    {
+        index_num += ib->get_number_of_elements();
+        index_size += ib->get_size_in_bytes();
+    }
+
+    std::cout << "Num of vertices: " << vertex_num << " Size: "<< vertex_size << "\n";
+    std::cout << "Num of indices: " << index_num << " Size: "<< index_size << "\n";
+
+    std::cout << "Num of vertices without indices: " << unindexed_vertex_num << " Size: "<< unindexed_vertex_num * sizeof(cg::vertex) << "\n";
+
 }
 
 float3 cg::world::model::compute_normal(const tinyobj::attrib_t& attrib, const tinyobj::mesh_t& mesh, size_t index_offset)
