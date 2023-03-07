@@ -16,7 +16,6 @@ void cg::renderer::rasterization_renderer::init()
             settings->width, settings->height);
     rasterizer->set_render_target(render_target, depth_buffer);
 
-    // TODO: Что-то не работает
     model = std::make_shared<cg::world::model>();
     model->load_obj(settings->model_path);
 
@@ -46,7 +45,6 @@ void cg::renderer::rasterization_renderer::render()
 
     cg::utils::save_resource(*render_target, settings->result_path);
 
-    // TODO: Что-то не работает
     start = std::chrono::high_resolution_clock::now();
     for (size_t shape_id = 0; shape_id < model->get_index_buffers().size(); shape_id++) {
         rasterizer->set_vertex_buffer(model->get_vertex_buffers()[shape_id]);
@@ -64,7 +62,7 @@ void cg::renderer::rasterization_renderer::render()
             model->get_world_matrix()
             );
     rasterizer->vertex_shader = [&](float4 vertex, cg::vertex vertex_data){
-        auto processed = mul (matrix, vertex);
+        auto processed = mul(matrix, vertex);
         return std::pair(processed, vertex_data);
     };
 
