@@ -53,7 +53,7 @@ void model::allocate_buffers(const std::vector<tinyobj::shape_t>& shapes)
         {
             for (size_t v = 0; v < fv; v++)
             {
-                tinyobj::index_t idx = mesh.indices[index_offset];
+                tinyobj::index_t idx = mesh.indices[index_offset + v];
                 auto idx_tuple = std::make_tuple(
                         idx.vertex_index,
                         idx.normal_index,
