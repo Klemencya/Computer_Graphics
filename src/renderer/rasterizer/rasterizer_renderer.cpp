@@ -38,7 +38,7 @@ void cg::renderer::rasterization_renderer::init()
 
 void cg::renderer::rasterization_renderer::render()
 {
-    rasterizer->clear_render_target({0, 255, 255});
+    rasterizer->clear_render_target({0, 0, 0});
     float4x4 matrix = mul(
             camera->get_projection_matrix(),
             camera->get_view_matrix(),
@@ -68,12 +68,9 @@ void cg::renderer::rasterization_renderer::render()
         rasterizer->draw(model->get_index_buffers()[shape_id]->get_number_of_elements(), 0);
     }
 
-
     auto stop = std::chrono::high_resolution_clock::now();
 
-
     cg::utils::save_resource(*render_target, settings->result_path);
-
 
     std::chrono::duration<float, std::milli> duration = stop - start;
     std::cout << "Time: " << duration.count() << "ms\n";
