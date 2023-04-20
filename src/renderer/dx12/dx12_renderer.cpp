@@ -167,7 +167,7 @@ void cg::renderer::dx12_renderer::create_command_allocators()
 {
 	for (auto& command_allocator : command_allocators)
 	{
-		THROW_IF_FAILED(device->CreateCommandAlocator(
+		THROW_IF_FAILED(device->CreateCommandAllocator(
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
 				IID_PPV_ARGS(&command_allocator)
 				));
@@ -412,7 +412,7 @@ void cg::renderer::dx12_renderer::copy_data(const void* buffer_data, const UINT 
 D3D12_VERTEX_BUFFER_VIEW cg::renderer::dx12_renderer::create_vertex_buffer_view(const ComPtr<ID3D12Resource>& vertex_buffer, const UINT vertex_buffer_size)
 {
     D3D12_VERTEX_BUFFER_VIEW view{};
-    view.BufferLocation = vertex_buffer->GetCPUVirtualAddress();
+    view.BufferLocation = vertex_buffer->GetGPUVirtualAddress();
     view.StrideInBytes = sizeof(vertex);
     view.SizeInBytes = vertex_buffer_size;
 	return view;
@@ -424,7 +424,7 @@ D3D12_INDEX_BUFFER_VIEW cg::renderer::dx12_renderer::create_index_buffer_view(co
     view.BufferLocation = index_buffer->GetGPUVirtualAddress();
     view.Format = DXGI_FORMAT_R32_UINT;
     view.SizeInBytes = index_buffer_size;
-	return ;
+	return view;
 }
 
 void cg::renderer::dx12_renderer::create_shader_resource_view(const ComPtr<ID3D12Resource>& texture, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handler)
@@ -504,7 +504,7 @@ void cg::renderer::dx12_renderer::load_assets()
 
 	THROW_IF_FAILED(command_list->Close());
 
-	THROW_IF_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_VVP_ARGS(&fence)));
+	THROW_IF_FAILED(device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
 	fence_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 	if (fence_event == nullptr)
 	{
@@ -527,8 +527,8 @@ void cg::renderer::dx12_renderer::populate_command_list()
 	// Initial state
 	command_list->SetGraphicsRootSignature(root_signature.Get());
 	ID3D12DescriptorHeap* heaps[] = {cbv_srv_heap.get()};
-	command_list->SetDescriptorHeaps(_count0f(heaps), heaps);
-	command_list->SetGraphichsRootDescriptorTable(
+	command_list->SetDescriptorHeaps(_countof(heaps), heaps);
+	command_list->SetGraphicsRootDescriptorTable(
 			0, cbv_srv_heap.get_gpu_descriptor_handle(0)
 			);
 	command_list->RSSetViewports(1, &view_port);
@@ -537,7 +537,7 @@ void cg::renderer::dx12_renderer::populate_command_list()
 
 	// Starting barriers
 	D3D12_RESOURCE_BARRIER begin_barriers[] = {
-			CD2DX12_RESOURCE_BARRIER::Transition(
+			CD3DX12_RESOURCE_BARRIER::Transition(
 					render_targets[frame_index].Get(),
 					D3D12_RESOURCE_STATE_PRESENT,
 					D3D12_RESOURCE_STATE_RENDER_TARGET
@@ -563,7 +563,7 @@ void cg::renderer::dx12_renderer::populate_command_list()
 			nullptr
 			);
 
-	for (size_t s = 0l s < model->get_index_buffers().size(); s++)
+	for (size_t s = 0; s < model->get_index_buffers().size(); s++)
 	{
 		command_list->IASetVertexBuffers(0, 1, &vertex_buffer_views[s]);
 		command_list->IASetIndexBuffer(&index_buffer_views[s]);
@@ -574,7 +574,7 @@ void cg::renderer::dx12_renderer::populate_command_list()
 
 	//Ending barriers
 	D3D12_RESOURCE_BARRIER end_barriers[] = {
-			CD2DX12_RESOURCE_BARRIER::Transition(
+			CD3DX12_RESOURCE_BARRIER::Transition(
 					render_targets[frame_index].Get(),
 					D3D12_RESOURCE_STATE_RENDER_TARGET,
 					D3D12_RESOURCE_STATE_PRESENT
@@ -597,7 +597,7 @@ void cg::renderer::dx12_renderer::move_to_next_frame()
 			current_fence_value
 			));
 	frame_index = swap_chain->GetCurrentBackBufferIndex();
-	if (fence->GetCompleteValue() < fence_values[frame_index])
+	if (fence->GetCompletedValue() < fence_values[frame_index])
 	{
 		THROW_IF_FAILED(fence->SetEventOnCompletion(
 				fence_values[frame_index],
